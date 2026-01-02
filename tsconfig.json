@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "skipLibCheck": true,
+        "strict": true,
+        "baseUrl": ".",
+        "noImplicitAny": true,
+        "esModuleInterop": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "useDefineForClassFields": false,
+        "outDir": "./build",
+        "noEmit": true,
+        "types": ["@citizenfx/client", "@citizenfx/server"]
+    },
+    "exclude": [
+        "views",
+        "build",
+        "node_modules"
+    ]
+}

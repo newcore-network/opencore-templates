@@ -1,0 +1,8 @@
+core/
+build/
+opencore.config.ts
+node_modules/
+views/
+CLAUDE.md
+.claude/
+.vscode/

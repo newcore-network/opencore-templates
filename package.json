@@ -1,0 +1,23 @@
+{
+  "name": "opencore-templates",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OpenCore server project",
+  "scripts": {
+    "dev": "opencore dev",
+    "chat:dev": "pnpm --filter xchat-ui dev",
+    "build": "tsc --noEmit && opencore build"
+  },
+  "devDependencies": {
+    "@open-core/cli": "latest",
+    "typescript": "^5.3.3",
+    "esbuild": "^0.27.2",
+    "esbuild-plugin-swc": "^1.0.1",
+    "@swc/core": "^1.15.7"
+  },
+  "dependencies": {
+    "@citizenfx/client": "2.0.22443-1",
+    "@citizenfx/server": "2.0.22443-1",
+    "@open-core/framework": "latest"
+  }
+}

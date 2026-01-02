@@ -1,0 +1,1 @@
+### **I haven't finalized an idea for a standalone resource yet; if you have one, submit a pull request with your standalone resource.**
