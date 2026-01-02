@@ -9,6 +9,9 @@ client_scripts {
     'client.js'
 }
 
+server_scripts {
+    'server.js'
+}
 
 ui_page 'ui/index.html'
 
