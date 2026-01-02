@@ -1,8 +1,17 @@
 import { Server } from "@open-core/framework";
 
 /**
+ * Chat distance constants (in meters)
+ */
+const CHAT_DISTANCES = {
+  WHISPER: 5,
+  NORMAL: 20,
+  SHOUT: 50,
+};
+
+/**
  * Chat Commands Controller
- * Implements roleplay chat commands: /me, /do, /ooc, /b, /pm
+ * Implements roleplay chat commands with distance-based proximity
  */
 @Server.Controller()
 export class ChatController {
@@ -11,13 +20,82 @@ export class ChatController {
     private readonly playerService: Server.PlayerDirectoryPort
   ) {}
 
+  private getCoords(player: Server.Player): { x: number; y: number; z: number } | null {
+
+    const ped = GetPlayerPed(player.clientIDStr)
+    if (!ped) return null
+
+    const coords = GetEntityCoords(ped) as unknown
+    if (Array.isArray(coords)) {
+      const [x, y, z] = coords as unknown as [number, number, number]
+      return { x, y, z }
+    }
+
+    const c = coords as any
+    if (typeof c?.x === 'number' && typeof c?.y === 'number' && typeof c?.z === 'number') {
+      return { x: c.x, y: c.y, z: c.z }
+    }
+
+    return null
+  }
+
+  private applyDistanceFade(
+    base: { r: number; g: number; b: number },
+    distance: number,
+    radius: number
+  ): { r: number; g: number; b: number } {
+    const clamp = (n: number) => Math.max(0, Math.min(255, Math.round(n)))
+
+    const t = radius <= 0 ? 1 : distance / radius
+    const bucket = Math.max(0, Math.min(3, Math.floor(t * 4)))
+
+    const desat = bucket / 3
+    const darken = 1 - bucket * 0.12
+
+    const gray = 0.299 * base.r + 0.587 * base.g + 0.114 * base.b
+    const r = (base.r + (gray - base.r) * desat) * darken
+    const g = (base.g + (gray - base.g) * desat) * darken
+    const b = (base.b + (gray - base.b) * desat) * darken
+
+    return { r: clamp(r), g: clamp(g), b: clamp(b) }
+  }
+
+  private sendNearbyFaded(
+    playerFrom: Server.Player,
+    message: string,
+    radius: number,
+    author: string,
+    baseColor: { r: number; g: number; b: number }
+  ) {
+    const fromCoords = this.getCoords(playerFrom)
+    if (!fromCoords) {
+      this.chatService.sendNearby(playerFrom, message, radius, author, baseColor)
+      return
+    }
+
+    const players = this.playerService.getAll()
+    for (const target of players) {
+      const targetCoords = this.getCoords(target)
+      if (!targetCoords) continue
+
+      const dx = fromCoords.x - targetCoords.x
+      const dy = fromCoords.y - targetCoords.y
+      const dz = fromCoords.z - targetCoords.z
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
+
+      if (dist > radius) continue
+
+      const color = this.applyDistanceFade(baseColor, dist, radius)
+      this.chatService.sendPrivate(target, message, author, color)
+    }
+  }
+
   /**
-   * /say [message] - Normal chat message
-   * Example: /say Hello everyone
+   * /say [message] - Normal chat message (Proximal)
    */
   @Server.Command({
     command: "say",
-    description: "Send a chat message",
+    description: "Send a chat message to nearby players",
     usage: "/say [message]",
   })
   sayCommand(player: Server.Player, message: string) {
@@ -26,20 +104,19 @@ export class ChatController {
       return;
     }
 
-    this.chatService.broadcast(message, player.name, {
+    this.sendNearbyFaded(player, message, CHAT_DISTANCES.NORMAL, player.name, {
       r: 255,
       g: 255,
       b: 255,
-    });
+    })
   }
 
   /**
-   * /me [action] - Third-person action
-   * Example: /me dances -> "* John Doe dances"
+   * /me [action] - Third-person action (Proximal)
    */
   @Server.Command({
     command: "me",
-    description: "Third-person action",
+    description: "Third-person action for nearby players",
     usage: "Usage: /me [action]",
   })
   meCommand(player: Server.Player, action: string) {
@@ -48,14 +125,16 @@ export class ChatController {
     }
 
     const message = `* ${player.name} ${action}`;
-    this.chatService.broadcast(message, "", { r: 194, g: 162, b: 218 });
+    this.sendNearbyFaded(player, message, CHAT_DISTANCES.NORMAL, "", { r: 194, g: 162, b: 218 })
   }
 
   /**
-   * /do [description] - Environmental description
-   * Example: /do The door is locked -> "** The door is locked ((John Doe))"
+   * /do [description] - Environmental description (Proximal)
    */
-  @Server.Command({ command: "do", description: "Environmental description" })
+  @Server.Command({
+    command: "do",
+    description: "Environmental description for nearby players",
+  })
   doCommand(player: Server.Player, description: string) {
     if (!description || description.trim().length === 0) {
       player.send("Usage: /do [description]", "error");
@@ -63,7 +142,7 @@ export class ChatController {
     }
 
     const message = `** ${description} ((${player.name}))`;
-    this.chatService.broadcast(message, "", { r: 163, g: 190, b: 140 });
+    this.sendNearbyFaded(player, message, CHAT_DISTANCES.NORMAL, "", { r: 163, g: 190, b: 140 })
   }
 
   /**
@@ -85,10 +164,12 @@ export class ChatController {
   }
 
   /**
-   * /b [message] - Local out of character chat
-   * Example: /b brb -> "(( John Doe: brb ))"
+   * /b [message] - Local out of character chat (Proximal)
    */
-  @Server.Command({ command: "b", description: "Local OOC chat" })
+  @Server.Command({
+    command: "b",
+    description: "Local OOC chat for nearby players",
+  })
   bCommand(player: Server.Player, message: string) {
     if (!message || message.trim().length === 0) {
       player.send("Usage: /b [message]", "error");
@@ -96,16 +177,11 @@ export class ChatController {
     }
 
     const formattedMessage = `(( ${player.name}: ${message} ))`;
-    this.chatService.broadcast(formattedMessage, "", {
-      r: 150,
-      g: 150,
-      b: 150,
-    });
+    this.sendNearbyFaded(player, formattedMessage, CHAT_DISTANCES.NORMAL, "", { r: 150, g: 150, b: 150 })
   }
 
   /**
-   * /pm [playerId] [message] - Private message
-   * Example: /pm 1 hello -> Sends "hello" to player with clientId 1
+   * /pm [playerId] [message] - Private message (Global)
    */
   @Server.Command({ command: "pm", description: "Send private message" })
   pmCommand(player: Server.Player, targetId: number, message: string) {
@@ -142,10 +218,12 @@ export class ChatController {
   }
 
   /**
-   * /shout [message] - Shout (visible from distance)
-   * Example: /shout Help! -> "John Doe shouts: Help!"
+   * /shout [message] - Shout (Proximal - Long distance)
    */
-  @Server.Command({ command: "shout", description: "Shout message" })
+  @Server.Command({
+    command: "shout",
+    description: "Shout message to players in a large area",
+  })
   shoutCommand(player: Server.Player, message: string) {
     if (!message || message.trim().length === 0) {
       player.send("Usage: /shout [message]", "error");
@@ -153,14 +231,16 @@ export class ChatController {
     }
 
     const formattedMessage = `${player.name} shouts: ${message}!`;
-    this.chatService.broadcast(formattedMessage, "", { r: 255, g: 87, b: 87 });
+    this.sendNearbyFaded(player, formattedMessage, CHAT_DISTANCES.SHOUT, "", { r: 255, g: 87, b: 87 })
   }
 
   /**
-   * /whisper [message] - Whisper (very quiet)
-   * Example: /whisper Secret message -> "John Doe whispers: Secret message"
+   * /whisper [message] - Whisper (Proximal - Short distance)
    */
-  @Server.Command({ command: "whisper", description: "Whisper message" })
+  @Server.Command({
+    command: "whisper",
+    description: "Whisper message to very close players",
+  })
   whisperCommand(player: Server.Player, message: string) {
     if (!message || message.trim().length === 0) {
       player.send("Usage: /whisper [message]", "error");
@@ -168,11 +248,7 @@ export class ChatController {
     }
 
     const formattedMessage = `${player.name} whispers: ${message}`;
-    this.chatService.broadcast(formattedMessage, "", {
-      r: 180,
-      g: 180,
-      b: 180,
-    });
+    this.sendNearbyFaded(player, formattedMessage, CHAT_DISTANCES.WHISPER, "", { r: 180, g: 180, b: 180 })
   }
 
   /**

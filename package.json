@@ -10,14 +10,14 @@
   },
   "devDependencies": {
     "@open-core/cli": "latest",
-    "typescript": "^5.3.3",
+    "@swc/core": "^1.15.8",
     "esbuild": "^0.27.2",
     "esbuild-plugin-swc": "^1.0.1",
-    "@swc/core": "^1.15.7"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@citizenfx/client": "2.0.22443-1",
     "@citizenfx/server": "2.0.22443-1",
-    "@open-core/framework": "latest"
+    "@open-core/framework": "0.2.2-beta.1"
   }
 }

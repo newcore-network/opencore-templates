@@ -15,14 +15,14 @@ importers:
         specifier: 2.0.22443-1
         version: 2.0.22443-1
       '@open-core/framework':
-        specifier: latest
-        version: 0.2.0-beta.1
+        specifier: 0.2.2-beta.1
+        version: 0.2.2-beta.1
     devDependencies:
       '@open-core/cli':
         specifier: latest
-        version: 0.3.1
+        version: 0.3.3
       '@swc/core':
-        specifier: ^1.15.7
+        specifier: ^1.15.8
         version: 1.15.8
       esbuild:
         specifier: ^0.27.2
@@ -31,7 +31,7 @@ importers:
         specifier: ^1.0.1
         version: 1.0.1
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.9.3
         version: 5.9.3
 
   core: {}
@@ -40,7 +40,7 @@ importers:
     dependencies:
       '@open-core/framework':
         specifier: latest
-        version: 0.2.0-beta.1
+        version: 0.2.2-beta.1
     devDependencies:
       typescript:
         specifier: ^5.3.3
@@ -357,14 +357,14 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@open-core/cli@0.3.1':
-    resolution: {integrity: sha512-FH5VZPznjcwQIfHydWUUSlZRoANWzi9TUOYOXzVYxZcCSUDu9eM3iPT4Gt5Gr2/6OGNqvtqgXvfeZRIiyBKuWg==}
+  '@open-core/cli@0.3.3':
+    resolution: {integrity: sha512-svOSFc7M1+cU4y+ArqRpEoNFmBCmSJTix364QFgfIBFaOi/F0NJiRHn1f9ur41leq/BaqBmHEnmOHj6H5o/Hsg==}
     engines: {node: '>=16.0.0'}
     os: [darwin, linux, win32]
     hasBin: true
 
-  '@open-core/framework@0.2.0-beta.1':
-    resolution: {integrity: sha512-PqsgdJkpzoyFQnySJ35tqvEoHE6VT5mhN0jwCpvexRexTiqQJnAVYmSpJH5HQIzTqg7tEGzrSS1qC2gXcCWPwQ==}
+  '@open-core/framework@0.2.2-beta.1':
+    resolution: {integrity: sha512-py7Dfq223CZ3lzd5XajhfOdUEjqMV4L3y09cZ32oWpSu2MkoPTYACxrHru0N4npqFi0ZApgrZyNxXJL+BX8/pA==}
 
   '@rollup/rollup-android-arm-eabi@4.54.0':
     resolution: {integrity: sha512-OywsdRHrFvCdvsewAInDKCNyR3laPA2mc9bRYJ6LBp5IyvF3fvXbbNR0bSzHlZVFtn6E0xw2oZlyjg4rKCVcng==}
@@ -803,7 +803,7 @@ snapshots:
   '@esbuild/win32-x64@0.27.2':
     optional: true
 
-  '@open-core/cli@0.3.1':
+  '@open-core/cli@0.3.3':
     dependencies:
       '@swc/core': 1.15.8
       esbuild: 0.27.2
@@ -811,7 +811,7 @@ snapshots:
     transitivePeerDependencies:
       - '@swc/helpers'
 
-  '@open-core/framework@0.2.0-beta.1':
+  '@open-core/framework@0.2.2-beta.1':
     dependencies:
       reflect-metadata: 0.2.2
       tsyringe: 4.10.0

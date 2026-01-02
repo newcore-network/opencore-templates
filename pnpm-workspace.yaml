@@ -1,6 +1,9 @@
 packages:
-  - 'core'
-  - 'resources/*'
-  - 'resources/*/ui'
-  - 'standalone/*'
+  - core
+  - resources/*
+  - resources/*/ui
+  - standalone/*
 
+ignoredBuiltDependencies:
+  - '@open-core/cli'
+  - esbuild
