@@ -11,7 +11,12 @@ A modern, high-performance chat system with a classic SA:MP-inspired aesthetic, 
 - **Inline Color Codes**: Supports SAMP-style color codes (e.g., `{FF0000}Red Text`) for trusted server messages.
 - **Auto-Hide System**: Configurable auto-hide with custom delays to keep the screen clean.
 - **Roleplay Commands**: Built-in support for `/me`, `/do`, `/ooc`, `/shout`, `/whisper`, and more.
+- **Distance Fade (Proximity Chat)**: Local messages fade to grayscale in **4 tonalities** based on distance to the sender.
 - **Dev Mode**: Included browser-based testing environment for UI development without launching the game.
+
+## Screenshots
+
+![xChat Screenshot](../../_assets/xchat.png)
 
 ## Installation
 
