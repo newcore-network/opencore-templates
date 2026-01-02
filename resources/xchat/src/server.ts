@@ -12,13 +12,6 @@ Server.init({
     chat: { enabled: true, export: true},
     commands: { enabled: true, provider: 'core'},
     exports: { enabled: true, /* Enable exports for other resources */},
-  },
-  devMode: {
-    enabled: true,
-    hotReload: {
-        port: 3847,
-        enabled: true
-    }
   }
 })
   .then(() => {
