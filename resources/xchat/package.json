@@ -1,15 +1,10 @@
 {
   "name": "xchat",
   "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "build": "tsc"
-  },
   "dependencies": {
-    "@open-core/framework": "latest"
+    "@open-core/framework": "^0.3.2"
   },
   "devDependencies": {
     "typescript": "^5.3.3"
   }
 }
-

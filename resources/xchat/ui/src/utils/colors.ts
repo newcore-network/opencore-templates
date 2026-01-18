@@ -29,7 +29,9 @@ export function renderTextWithInlineColors(target: HTMLElement, text: string, de
   }
 
   let match: RegExpExecArray | null
-  while ((match = regex.exec(text)) !== null) {
+  while (true) {
+    match = regex.exec(text)
+    if (match === null) break
     const chunk = text.slice(lastIndex, match.index)
     pushSpan(chunk)
 

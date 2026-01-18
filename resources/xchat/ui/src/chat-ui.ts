@@ -1,9 +1,9 @@
-import { ChatMessage, NUIMessage } from './types'
-import { CHAT_CONFIG } from './config'
-import { rgbToString, renderTextWithInlineColors } from './utils/colors'
-import { formatTime } from './utils/time'
 import { CommandHistory } from './components/history'
+import { CHAT_CONFIG } from './config'
 import { DevTools } from './services/dev-tools'
+import { ChatMessage, NUIMessage } from './types'
+import { renderTextWithInlineColors, rgbToString } from './utils/colors'
+import { formatTime } from './utils/time'
 
 export class ChatUI {
   private root: HTMLElement
@@ -26,16 +26,31 @@ export class ChatUI {
   private hideTimeout: number | null = null
 
   constructor() {
-    this.root = document.getElementById('chat-container')!
-    this.messagesContainer = document.getElementById('chat-messages')!
-    this.newIndicator = document.getElementById('chat-new-indicator') as HTMLButtonElement
-    this.inputContainer = document.getElementById('chat-input-container')!
-    this.input = document.getElementById('chat-input') as HTMLInputElement
-    this.settingsContainer = document.getElementById('chat-settings')!
-    this.autoHideCheckbox = document.getElementById('setting-autohide') as HTMLInputElement
-    this.hideDurationInput = document.getElementById('setting-duration') as HTMLInputElement
-    this.charCountEl = document.getElementById('chat-char-count')!
-    this.settingsToggleBtn = document.getElementById('chat-settings-toggle') as HTMLButtonElement
+    const root = document.getElementById('chat-container')
+    const messagesContainer = document.getElementById('chat-messages')
+    const newIndicator = document.getElementById('chat-new-indicator') as HTMLButtonElement
+    const inputContainer = document.getElementById('chat-input-container')
+    const input = document.getElementById('chat-input') as HTMLInputElement
+    const settingsContainer = document.getElementById('chat-settings')
+    const autoHideCheckbox = document.getElementById('setting-autohide') as HTMLInputElement
+    const hideDurationInput = document.getElementById('setting-duration') as HTMLInputElement
+    const charCountEl = document.getElementById('chat-char-count')
+    const settingsToggleBtn = document.getElementById('chat-settings-toggle') as HTMLButtonElement
+
+    if (!root || !messagesContainer || !inputContainer || !settingsContainer || !charCountEl) {
+      throw new Error('Required chat elements not found')
+    }
+
+    this.root = root
+    this.messagesContainer = messagesContainer
+    this.newIndicator = newIndicator
+    this.inputContainer = inputContainer
+    this.input = input
+    this.settingsContainer = settingsContainer
+    this.autoHideCheckbox = autoHideCheckbox
+    this.hideDurationInput = hideDurationInput
+    this.charCountEl = charCountEl
+    this.settingsToggleBtn = settingsToggleBtn
 
     this.input.maxLength = CHAT_CONFIG.MAX_INPUT_LENGTH
 
@@ -70,7 +85,8 @@ export class ChatUI {
       try {
         const settings = JSON.parse(saved)
         if (settings.autoHide !== undefined) CHAT_CONFIG.AUTO_HIDE_ENABLED = !!settings.autoHide
-        if (settings.hideDuration !== undefined) CHAT_CONFIG.AUTO_HIDE_DURATION = Number(settings.hideDuration)
+        if (settings.hideDuration !== undefined)
+          CHAT_CONFIG.AUTO_HIDE_DURATION = Number(settings.hideDuration)
       } catch (e) {
         console.error('Failed to load chat settings', e)
       }
@@ -78,7 +94,8 @@ export class ChatUI {
 
     // Sync UI with config
     if (this.autoHideCheckbox) this.autoHideCheckbox.checked = CHAT_CONFIG.AUTO_HIDE_ENABLED
-    if (this.hideDurationInput) this.hideDurationInput.value = CHAT_CONFIG.AUTO_HIDE_DURATION.toString()
+    if (this.hideDurationInput)
+      this.hideDurationInput.value = CHAT_CONFIG.AUTO_HIDE_DURATION.toString()
   }
 
   private saveSettings() {
@@ -145,7 +162,7 @@ export class ChatUI {
     const current = this.input.value.length
     const max = CHAT_CONFIG.MAX_INPUT_LENGTH
     this.charCountEl.textContent = `${current} / ${max}`
-    
+
     if (current >= max) {
       this.charCountEl.style.color = '#ff4444'
     } else if (current >= max * 0.8) {
@@ -224,8 +241,8 @@ export class ChatUI {
     })
 
     this.hideDurationInput.addEventListener('change', () => {
-      const val = parseInt(this.hideDurationInput.value)
-      if (!isNaN(val)) {
+      const val = parseInt(this.hideDurationInput.value, 10)
+      if (!Number.isNaN(val)) {
         CHAT_CONFIG.AUTO_HIDE_DURATION = val
         this.resetHideTimer()
         this.saveSettings()
@@ -263,7 +280,8 @@ export class ChatUI {
           }
           if (data.hideDuration !== undefined) {
             CHAT_CONFIG.AUTO_HIDE_DURATION = Number(data.hideDuration)
-            if (this.hideDurationInput) this.hideDurationInput.value = CHAT_CONFIG.AUTO_HIDE_DURATION.toString()
+            if (this.hideDurationInput)
+              this.hideDurationInput.value = CHAT_CONFIG.AUTO_HIDE_DURATION.toString()
           }
           this.resetHideTimer()
           this.saveSettings()
@@ -355,9 +373,9 @@ export class ChatUI {
       this.root.classList.remove('chat-closed')
       this.root.classList.add('chat-open')
       this.inputContainer.classList.remove('hidden')
-      
+
       this.updateSettingsVisibility()
-      
+
       // Focus but keep existing draft (don't clear input.value)
       requestAnimationFrame(() => {
         this.scrollToBottom(true)
@@ -413,8 +431,7 @@ export class ChatUI {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
-    })
-      .catch((err) => console.error('Failed to close chat:', err))
+    }).catch((err) => console.error('Failed to close chat:', err))
   }
 
   private updatePinnedState() {
@@ -448,6 +465,8 @@ export class ChatUI {
   }
 
   private getResourceName(): string {
-    return (window as any).GetParentResourceName ? (window as any).GetParentResourceName() : 'chat-oc'
+    return (window as any).GetParentResourceName
+      ? (window as any).GetParentResourceName()
+      : 'chat-oc'
   }
 }

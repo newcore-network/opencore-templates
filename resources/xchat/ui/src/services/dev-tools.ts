@@ -4,7 +4,11 @@ import { hexToRgb } from '../utils/colors'
 export class DevTools {
   private panel: HTMLElement | null = null
 
-  constructor(private addMessageCallback: (msg: ChatMessage) => void, private toggleChatCallback: (visible: boolean) => void, private clearMessagesCallback: () => void) {
+  constructor(
+    private addMessageCallback: (msg: ChatMessage) => void,
+    private toggleChatCallback: (visible: boolean) => void,
+    private clearMessagesCallback: () => void,
+  ) {
     this.panel = document.getElementById('chat-dev-panel')
     if (!this.panel) return
 
@@ -13,7 +17,9 @@ export class DevTools {
   }
 
   private setupBrowserTesting() {
-    console.log('[ChatUI] Browser mode: dev helpers enabled. Press T to open chat, F2 for dev panel.')
+    console.log(
+      '[ChatUI] Browser mode: dev helpers enabled. Press T to open chat, F2 for dev panel.',
+    )
 
     this.addMessageCallback({
       author: 'SYSTEM',
@@ -64,7 +70,7 @@ export class DevTools {
   private setupDevPanel() {
     if (!this.panel) return
 
-    const toggle = () => this.panel!.classList.toggle('hidden')
+    const toggle = () => this.panel?.classList.toggle('hidden')
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'F2') {
@@ -109,7 +115,7 @@ export class DevTools {
       </div>
     `
 
-    const q = <T extends HTMLElement>(id: string) => this.panel!.querySelector(`#${id}`) as T
+    const q = <T extends HTMLElement>(id: string) => this.panel?.querySelector(`#${id}`) as T
 
     const typeEl = q<HTMLSelectElement>('dev-type')
     const authorEl = q<HTMLInputElement>('dev-author')
@@ -124,7 +130,8 @@ export class DevTools {
 
     q<HTMLButtonElement>('dev-send').onclick = () => {
       const messageType = typeEl.value as any
-      const isTrusted = messageType === 'system' || messageType === 'error' || messageType === 'warning'
+      const isTrusted =
+        messageType === 'system' || messageType === 'error' || messageType === 'warning'
       this.addMessageCallback({
         type: messageType,
         author: authorEl.value,
