@@ -1,10 +1,4 @@
 {
   "name": "xchat",
-  "version": "1.0.0",
-  "dependencies": {
-    "@open-core/framework": "^0.3.2"
-  },
-  "devDependencies": {
-    "typescript": "^5.3.3"
-  }
+  "version": "1.0.0"
 }

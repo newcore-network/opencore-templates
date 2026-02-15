@@ -5,8 +5,10 @@ import './server/chat.controller'
 Server.init({
   mode: 'RESOURCE',
   coreResourceName: 'core',
-}).then(() => {
-  console.log('[xchat] Chat system initialized successfully')
-}).catch((error: unknown) => {
-  console.error('[xchat] Failed to initialize:', error)
 })
+  .then(() => {
+    console.log('[xchat] Chat system initialized successfully')
+  })
+  .catch((error: unknown) => {
+    console.error('[xchat] Failed to initialize:', error)
+  })

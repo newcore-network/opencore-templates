@@ -16,8 +16,8 @@ const CHAT_DISTANCES = {
 @Server.Controller()
 export class ChatController {
   constructor(
-    private readonly chatService: Server.ChatService,
-    private readonly playerService: Server.PlayerDirectoryPort,
+    private readonly chatService: Server.Chat,
+    private readonly playerService: Server.Players,
   ) {}
 
   private getCoords(player: Server.Player): { x: number; y: number; z: number } | null {

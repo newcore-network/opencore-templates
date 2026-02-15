@@ -403,8 +403,6 @@ export class ChatUI {
     this.history.push(message)
     this.resetHideTimer()
 
-    const isCommand = message.startsWith('/')
-
     fetch(`https://${this.getResourceName()}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -416,11 +414,7 @@ export class ChatUI {
           this.input.value = '' // Clear input ONLY on successful send
           this.updateCharCount()
           this.history.reset()
-          if (!isCommand) {
-            requestAnimationFrame(() => this.closeChat())
-          } else {
-            this.input.focus()
-          }
+          requestAnimationFrame(() => this.closeChat())
         }
       })
       .catch((err) => console.error('Failed to send message:', err))

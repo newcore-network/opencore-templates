@@ -1,7 +1,6 @@
-import { sendNUIMessage, setChatFocus } from './nui.utils'
+import { sendNUIMessage, setChatFocus } from './chat.nui'
 
 export function registerChatCommands() {
-  // Key binding to open chat (T key)
   RegisterCommand(
     '+openchat',
     () => {
@@ -11,20 +10,13 @@ export function registerChatCommands() {
     false,
   )
 
-  RegisterCommand(
-    '-openchat',
-    () => {
-      // Key released
-    },
-    false,
-  )
+  RegisterCommand('-openchat', () => {}, false)
 
   RegisterKeyMapping('+openchat', 'Open Chat', 'keyboard', 'T')
 
-  // Command to configure chat settings
   RegisterCommand(
     'chatconfig',
-    (_source: any, args: string[]) => {
+    (_source: unknown, args: string[]) => {
       const option = args[0]?.toLowerCase()
       const value = args[1]
 
@@ -32,17 +24,21 @@ export function registerChatCommands() {
         const enabled = value === 'true' || value === '1'
         sendNUIMessage('updateSettings', { autoHide: enabled })
         console.log(`[Chat] Auto-hide ${enabled ? 'enabled' : 'disabled'}`)
-      } else if (option === 'duration') {
-        const duration = parseInt(value, 10)
+        return
+      }
+
+      if (option === 'duration') {
+        const duration = Number.parseInt(value, 10)
         if (!Number.isNaN(duration)) {
           sendNUIMessage('updateSettings', { hideDuration: duration })
           console.log(`[Chat] Auto-hide duration set to ${duration}ms`)
+          return
         }
-      } else {
-        console.log('[Chat] Usage: /chatconfig [autohide|duration] [value]')
-        console.log('[Chat] Example: /chatconfig autohide true')
-        console.log('[Chat] Example: /chatconfig duration 5000')
       }
+
+      console.log('[Chat] Usage: /chatconfig [autohide|duration] [value]')
+      console.log('[Chat] Example: /chatconfig autohide true')
+      console.log('[Chat] Example: /chatconfig duration 5000')
     },
     false,
   )

@@ -1,8 +1,7 @@
 import { Client } from '@open-core/framework/client'
-import { registerChatCommands } from '../modules/commands'
-import { registerChatCallbacks } from '../modules/nui.callbacks'
-import { sendNUIMessage, setChatFocus } from '../modules/nui.utils'
-import { ChatMessage } from '../modules/types'
+import { registerChatCommands } from './chat.commands'
+import { registerChatCallbacks, sendNUIMessage, setChatFocus } from './chat.nui'
+import { ChatMessage } from './chat.types'
 
 /**
  * Chat UI Controller

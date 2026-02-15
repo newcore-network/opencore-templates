@@ -15,8 +15,8 @@ importers:
         specifier: 2.0.22443-1
         version: 2.0.22443-1
       '@open-core/framework':
-        specifier: ^0.3.2
-        version: 0.3.2
+        specifier: file:../opencore-framework
+        version: file:../opencore-framework(reflect-metadata@0.2.2)(tsyringe@4.10.0)(zod@4.3.5)
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -40,17 +40,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  core: {}
-
-  resources/xchat:
-    dependencies:
-      '@open-core/framework':
-        specifier: ^0.3.2
-        version: 0.3.2
-    devDependencies:
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+  resources/xchat: {}
 
   resources/xchat/ui:
     devDependencies:
@@ -422,8 +412,12 @@ packages:
     os: [darwin, linux, win32]
     hasBin: true
 
-  '@open-core/framework@0.3.2':
-    resolution: {integrity: sha512-6Pi4NbjzMyhgEPajznyqRiap49gvfjojF8cjZwMdoRc7RpUGL2PSE8pNQw6LwFI64/yA6Tq7DSg7FSL+zyXiTg==}
+  '@open-core/framework@file:../opencore-framework':
+    resolution: {directory: ../opencore-framework, type: directory}
+    peerDependencies:
+      reflect-metadata: ^0.2.2
+      tsyringe: ^4.10.0
+      zod: ^4.3.5
 
   '@rollup/rollup-android-arm-eabi@4.54.0':
     resolution: {integrity: sha512-OywsdRHrFvCdvsewAInDKCNyR3laPA2mc9bRYJ6LBp5IyvF3fvXbbNR0bSzHlZVFtn6E0xw2oZlyjg4rKCVcng==}
@@ -921,7 +915,7 @@ snapshots:
     transitivePeerDependencies:
       - '@swc/helpers'
 
-  '@open-core/framework@0.3.2':
+  '@open-core/framework@file:../opencore-framework(reflect-metadata@0.2.2)(tsyringe@4.10.0)(zod@4.3.5)':
     dependencies:
       reflect-metadata: 0.2.2
       tsyringe: 4.10.0
