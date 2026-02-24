@@ -60,6 +60,30 @@ You can send messages from other resources using the `xchat` export:
 ```typescript
 // Server-side
 exports.xchat.sendChatMessage("Hello World", "SYSTEM", 255, 255, 255);
+
+// Spatial message (player/npc/entity compatible)
+exports.xchat.sendSpatialMessage({
+  message: "Stay back!",
+  author: "Guard NPC",
+  radius: 20,
+  color: { r: 255, g: 120, b: 120 },
+  source: {
+    id: "npc:guard-01",
+    kind: "npc",
+    name: "Guard NPC",
+    position: { x: 100.0, y: 200.0, z: 30.0 },
+    dimension: 0,
+  },
+});
+```
+
+### Chat Hook Event
+`xchat` emits a server event for integrations such as NPC AI:
+
+```ts
+on("xchat:onMessage", (payload) => {
+  // payload: { source, message, command }
+});
 ```
 
 ### Configuration

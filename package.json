@@ -12,6 +12,9 @@
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
     "@open-core/cli": "^0.5.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@citizenfx/client": "2.0.22443-1",
+    "@citizenfx/server": "2.0.22443-1",
+    "@open-core/framework": "file:../opencore-framework"
   }
 }
