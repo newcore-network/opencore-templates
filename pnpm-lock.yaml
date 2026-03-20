@@ -36,6 +36,12 @@ importers:
       '@open-core/framework':
         specifier: file:../opencore-framework
         version: file:../opencore-framework(reflect-metadata@0.2.2)(tsyringe@4.10.0)(zod@4.3.6)
+      '@ragempcommunity/types-client':
+        specifier: ^2.1.9
+        version: 2.1.9
+      '@ragempcommunity/types-server':
+        specifier: ^2.1.9
+        version: 2.1.9
       '@swc/core':
         specifier: ^1.15.18
         version: 1.15.18
@@ -436,6 +442,12 @@ packages:
       reflect-metadata: ^0.2.2
       tsyringe: ^4.10.0
       zod: ^4.3.5
+
+  '@ragempcommunity/types-client@2.1.9':
+    resolution: {integrity: sha512-D6SdgzyyuHdQyVDSPVohII6EWbwmWTmOBynVU9BcIHxvtVbr82ZmQ+YzMVlihcEiOk/nt8aeWSzcrWdXXHkgeA==}
+
+  '@ragempcommunity/types-server@2.1.9':
+    resolution: {integrity: sha512-J0aDQxzGBW3l8JniyDNZl17JJFXjjy59LHeQKjNgPk3kWpW/mOuPQ1L90euZFkAx0PPGT96IA3+bHq4zarNEmA==}
 
   '@rollup/rollup-android-arm-eabi@4.54.0':
     resolution: {integrity: sha512-OywsdRHrFvCdvsewAInDKCNyR3laPA2mc9bRYJ6LBp5IyvF3fvXbbNR0bSzHlZVFtn6E0xw2oZlyjg4rKCVcng==}
@@ -945,6 +957,10 @@ snapshots:
       reflect-metadata: 0.2.2
       tsyringe: 4.10.0
       zod: 4.3.6
+
+  '@ragempcommunity/types-client@2.1.9': {}
+
+  '@ragempcommunity/types-server@2.1.9': {}
 
   '@rollup/rollup-android-arm-eabi@4.54.0':
     optional: true

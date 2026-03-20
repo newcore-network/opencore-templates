@@ -77,7 +77,12 @@ export class ChatUI {
       scrollToBottom: () => this.scrollToBottom(true),
     }
 
-    if (!(window as any).invokeNative) {
+    const hasRuntimeBridge =
+      typeof (window as any).__OpenCoreWebView?.emit === 'function' ||
+      typeof (window as any).mp?.trigger === 'function' ||
+      typeof (window as any).GetParentResourceName === 'function'
+
+    if (!hasRuntimeBridge) {
       new DevTools(addMsg, toggle, clear)
     }
 
@@ -330,6 +335,9 @@ export class ChatUI {
       case 'chat:visibility':
         this.toggleChat(!!message.data?.visible)
         break
+      case 'chat:focus-input':
+        requestAnimationFrame(() => this.input.focus())
+        break
     }
   }
 
@@ -540,6 +548,14 @@ export class ChatUI {
     ).__OpenCoreWebView
     if (bridge?.emit) {
       bridge.emit(eventName, payload)
+      return true
+    }
+
+    const rageMp = window as unknown as {
+      mp?: { trigger?: (eventName: string, viewId: string, event: string, payloadJson: string) => void }
+    }
+    if (typeof rageMp.mp?.trigger === 'function') {
+      rageMp.mp.trigger(WEBVIEW_BRIDGE_CALLBACK, DEFAULT_VIEW_ID, eventName, JSON.stringify(payload ?? null))
       return true
     }
 

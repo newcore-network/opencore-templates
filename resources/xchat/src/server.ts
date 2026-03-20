@@ -1,5 +1,4 @@
 import { Server } from '@open-core/framework/server'
-import './server/chat.controller'
 
 // Initialize OpenCore in RESOURCE mode
 Server.init({

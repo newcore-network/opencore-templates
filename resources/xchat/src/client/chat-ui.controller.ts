@@ -26,6 +26,13 @@ export class ChatUIController {
   @Client.Key('T', 'Open chat')
   openChat(): void {
     this.ensureWebView()
+
+    if (this.chatVisible) {
+      WebView.show(true, true)
+      this.sendToView('chat:focus-input', null)
+      return
+    }
+
     this.chatVisible = true
     WebView.show(true, true)
     this.syncViewState()
@@ -45,8 +52,12 @@ export class ChatUIController {
 
     if (message.startsWith('/')) {
       const [command = '', ...args] = message.slice(1).trim().split(/\s+/)
+      const normalizedArgs = args
+        .map((arg) => (typeof arg === 'string' ? arg.trim() : ''))
+        .filter((arg) => arg.length > 0)
+
       if (!command) return
-      this.events.emit('core:execute-command', command, args)
+      this.events.emit('core:execute-command', command.trim(), normalizedArgs)
     } else {
       this.events.emit('core:execute-command', 'say', [message])
     }
@@ -145,24 +156,29 @@ export class ChatUIController {
     if (WebView.exists()) return
 
     WebView.create(resolveChatViewUrl(this.runtime), {
-      visible: false,
+      visible: true,
       focused: false,
-      cursor: true,
+      cursor: false,
+      chatMode: true,
     })
+
+    WebView.markAsChat()
   }
 
   private closeChat(): void {
     this.chatVisible = false
     this.sendToView('chat:visibility', { visible: false })
-    WebView.hide()
+    WebView.blur()
   }
 
   private addMessage(message: ChatMessage): void {
+    this.ensureWebView()
     this.messages.push(message)
     if (this.messages.length > this.maxMessages) {
       this.messages.shift()
     }
 
+    WebView.setVisible(true)
     this.sendToView('chat:add-message', message)
   }
 
