@@ -1,9 +1,12 @@
 import { CommandHistory } from './components/history'
 import { CHAT_CONFIG } from './config'
 import { DevTools } from './services/dev-tools'
-import { ChatMessage, NUIMessage } from './types'
+import type { ChatMessage, ChatSettings, ChatState, LegacyUIMessage, WebViewMessage } from './types'
 import { renderTextWithInlineColors, rgbToString } from './utils/colors'
 import { formatTime } from './utils/time'
+
+const DEFAULT_VIEW_ID = 'default'
+const WEBVIEW_BRIDGE_CALLBACK = '__opencore:webview:message'
 
 export class ChatUI {
   private root: HTMLElement
@@ -24,6 +27,7 @@ export class ChatUI {
   private messageElements: HTMLElement[] = []
   private history = new CommandHistory()
   private hideTimeout: number | null = null
+  private readyAttempts = 0
 
   constructor() {
     const root = document.getElementById('chat-container')
@@ -56,12 +60,13 @@ export class ChatUI {
 
     this.loadSettings()
     this.setupEventListeners()
-    this.setupNUIListener()
+    this.setupMessageListener()
     this.updateCharCount()
     this.updateSettingsVisibility()
 
-    const addMsg = (m: Partial<ChatMessage>) => this.addMessage(this.normalizeMessage(m))
-    const toggle = (v: boolean) => this.toggleChat(v)
+    const addMsg = (message: Partial<ChatMessage>) =>
+      this.addMessage(this.normalizeMessage(message))
+    const toggle = (visible: boolean) => this.toggleChat(visible)
     const clear = () => this.clearMessages()
 
     ;(window as any).ocChatDev = {
@@ -77,6 +82,7 @@ export class ChatUI {
     }
 
     this.resetHideTimer()
+    this.notifyRuntimeReady()
   }
 
   private loadSettings() {
@@ -85,17 +91,18 @@ export class ChatUI {
       try {
         const settings = JSON.parse(saved)
         if (settings.autoHide !== undefined) CHAT_CONFIG.AUTO_HIDE_ENABLED = !!settings.autoHide
-        if (settings.hideDuration !== undefined)
+        if (settings.hideDuration !== undefined) {
           CHAT_CONFIG.AUTO_HIDE_DURATION = Number(settings.hideDuration)
-      } catch (e) {
-        console.error('Failed to load chat settings', e)
+        }
+      } catch (error) {
+        console.error('Failed to load chat settings', error)
       }
     }
 
-    // Sync UI with config
     if (this.autoHideCheckbox) this.autoHideCheckbox.checked = CHAT_CONFIG.AUTO_HIDE_ENABLED
-    if (this.hideDurationInput)
+    if (this.hideDurationInput) {
       this.hideDurationInput.value = CHAT_CONFIG.AUTO_HIDE_DURATION.toString()
+    }
   }
 
   private saveSettings() {
@@ -121,19 +128,16 @@ export class ChatUI {
     if (this.isSettingsOpen) {
       this.settingsContainer.classList.remove('hidden')
       this.settingsToggleBtn.classList.add('active')
-
-      // Position dropdown dynamically below input container
       this.positionSettingsDropdown()
-    } else {
-      this.settingsContainer.classList.add('hidden')
-      this.settingsToggleBtn.classList.remove('active')
+      return
     }
+
+    this.settingsContainer.classList.add('hidden')
+    this.settingsToggleBtn.classList.remove('active')
   }
 
   private positionSettingsDropdown() {
     const inputRect = this.inputContainer.getBoundingClientRect()
-
-    // Position dropdown below input container with 8px gap
     this.settingsContainer.style.left = `${inputRect.left}px`
     this.settingsContainer.style.top = `${inputRect.bottom + 8}px`
   }
@@ -191,133 +195,204 @@ export class ChatUI {
       this.toggleSettings()
     })
 
-    this.input.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault()
+    this.input.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        event.preventDefault()
         this.sendMessage()
         return
       }
 
-      if (e.key === 'Escape') {
-        e.preventDefault()
+      if (event.key === 'Escape') {
+        event.preventDefault()
         this.closeChat()
         return
       }
 
-      if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        const val = this.history.navigate(-1, this.input.value)
-        if (val !== null) {
-          this.input.value = val
-          this.input.setSelectionRange(val.length, val.length)
+      if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        const value = this.history.navigate(-1, this.input.value)
+        if (value !== null) {
+          this.input.value = value
+          this.input.setSelectionRange(value.length, value.length)
           this.updateCharCount()
         }
         return
       }
 
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        const val = this.history.navigate(1, this.input.value)
-        if (val !== null) {
-          this.input.value = val
-          this.input.setSelectionRange(val.length, val.length)
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        const value = this.history.navigate(1, this.input.value)
+        if (value !== null) {
+          this.input.value = value
+          this.input.setSelectionRange(value.length, value.length)
           this.updateCharCount()
         }
         return
       }
 
-      if (e.key === 'End') {
-        e.preventDefault()
+      if (event.key === 'End') {
+        event.preventDefault()
         this.scrollToBottom(true)
-        return
       }
     })
 
-    // Settings listeners
     this.autoHideCheckbox.addEventListener('change', () => {
       CHAT_CONFIG.AUTO_HIDE_ENABLED = this.autoHideCheckbox.checked
       this.resetHideTimer()
       this.saveSettings()
+      this.emitToGame('chat:settings:update', {
+        autoHide: CHAT_CONFIG.AUTO_HIDE_ENABLED,
+        hideDuration: CHAT_CONFIG.AUTO_HIDE_DURATION,
+      })
     })
 
     this.hideDurationInput.addEventListener('change', () => {
-      const val = parseInt(this.hideDurationInput.value, 10)
-      if (!Number.isNaN(val)) {
-        CHAT_CONFIG.AUTO_HIDE_DURATION = val
+      const value = parseInt(this.hideDurationInput.value, 10)
+      if (!Number.isNaN(value)) {
+        CHAT_CONFIG.AUTO_HIDE_DURATION = value
         this.resetHideTimer()
         this.saveSettings()
+        this.emitToGame('chat:settings:update', {
+          autoHide: CHAT_CONFIG.AUTO_HIDE_ENABLED,
+          hideDuration: CHAT_CONFIG.AUTO_HIDE_DURATION,
+        })
       }
     })
 
-    window.addEventListener('keydown', (e) => {
-      if ((e.target as any)?.id === 'chat-input') return
-      const k = e.key.toLowerCase()
-      if (k === 't' && !this.isVisible) {
-        e.preventDefault()
+    window.addEventListener('keydown', (event) => {
+      if ((event.target as { id?: string } | null)?.id === 'chat-input') return
+      const key = event.key.toLowerCase()
+      if (key === 't' && !this.isVisible) {
+        event.preventDefault()
         this.toggleChat(true)
       }
-      if (e.key === 'End') this.scrollToBottom(true)
+      if (event.key === 'End') this.scrollToBottom(true)
     })
   }
 
-  private setupNUIListener() {
-    window.addEventListener('message', (event: MessageEvent<NUIMessage>) => {
-      const { type, data } = event.data
-      switch (type) {
-        case 'addMessage':
-          this.addMessage(this.normalizeMessage(data as Partial<ChatMessage>))
-          break
-        case 'clearChat':
-          this.clearMessages()
-          break
-        case 'toggleChat':
-          this.toggleChat(!!data?.visible)
-          break
-        case 'updateSettings':
-          if (data.autoHide !== undefined) {
-            CHAT_CONFIG.AUTO_HIDE_ENABLED = !!data.autoHide
-            if (this.autoHideCheckbox) this.autoHideCheckbox.checked = CHAT_CONFIG.AUTO_HIDE_ENABLED
-          }
-          if (data.hideDuration !== undefined) {
-            CHAT_CONFIG.AUTO_HIDE_DURATION = Number(data.hideDuration)
-            if (this.hideDurationInput)
-              this.hideDurationInput.value = CHAT_CONFIG.AUTO_HIDE_DURATION.toString()
-          }
-          this.resetHideTimer()
-          this.saveSettings()
-          break
+  private setupMessageListener() {
+    window.addEventListener('message', (event: MessageEvent<LegacyUIMessage | WebViewMessage>) => {
+      const payload = event.data
+      if (!payload) return
+
+      if ((payload as WebViewMessage).__opencoreWebView === true) {
+        this.handleWebViewMessage(payload as WebViewMessage)
+        return
       }
+
+      this.handleLegacyMessage(payload as LegacyUIMessage)
     })
   }
 
-  private normalizeMessage(msg: Partial<ChatMessage>): ChatMessage {
-    return {
-      author: msg.author ?? '',
-      message: msg.message ?? '',
-      color: msg.color,
-      authorColor: msg.authorColor,
-      textColor: msg.textColor,
-      timestamp: msg.timestamp ?? Date.now(),
-      type: msg.type ?? (msg.author === 'SYSTEM' ? 'system' : 'chat'),
-      trusted: msg.trusted ?? false,
+  private handleLegacyMessage(message: LegacyUIMessage) {
+    switch (message.type) {
+      case 'addMessage':
+        this.addMessage(this.normalizeMessage(message.data as Partial<ChatMessage>))
+        break
+      case 'clearChat':
+        this.clearMessages()
+        break
+      case 'toggleChat':
+        this.toggleChat(!!message.data?.visible)
+        break
+      case 'updateSettings':
+        this.applySettings(message.data)
+        break
     }
   }
 
-  private addMessage(msg: ChatMessage) {
-    if (!msg.message) return
+  private handleWebViewMessage(message: WebViewMessage) {
+    switch (message.type) {
+      case 'show':
+        this.toggleChat(true)
+        return
+      case 'hide':
+      case 'destroy':
+        this.toggleChat(false)
+        return
+      case 'create':
+        return
+    }
+
+    switch (message.action) {
+      case 'chat:state':
+        this.applyState(message.data as ChatState)
+        break
+      case 'chat:add-message':
+        this.addMessage(this.normalizeMessage(message.data as Partial<ChatMessage>))
+        break
+      case 'chat:clear':
+        this.clearMessages()
+        break
+      case 'chat:settings':
+        this.applySettings(message.data as ChatSettings)
+        break
+      case 'chat:visibility':
+        this.toggleChat(!!message.data?.visible)
+        break
+    }
+  }
+
+  private applyState(state?: ChatState) {
+    if (!state) return
+
+    this.clearMessages(false)
+    for (const message of state.messages ?? []) {
+      this.addMessage(this.normalizeMessage(message), false)
+    }
+
+    this.applySettings(state.settings)
+    this.toggleChat(!!state.visible)
+    this.scrollToBottom(true)
+  }
+
+  private applySettings(settings?: ChatSettings) {
+    if (!settings) return
+
+    if (settings.autoHide !== undefined) {
+      CHAT_CONFIG.AUTO_HIDE_ENABLED = !!settings.autoHide
+      if (this.autoHideCheckbox) this.autoHideCheckbox.checked = CHAT_CONFIG.AUTO_HIDE_ENABLED
+    }
+
+    if (settings.hideDuration !== undefined) {
+      CHAT_CONFIG.AUTO_HIDE_DURATION = Number(settings.hideDuration)
+      if (this.hideDurationInput) {
+        this.hideDurationInput.value = CHAT_CONFIG.AUTO_HIDE_DURATION.toString()
+      }
+    }
+
+    this.resetHideTimer()
+    this.saveSettings()
+  }
+
+  private normalizeMessage(message: Partial<ChatMessage>): ChatMessage {
+    return {
+      author: message.author ?? '',
+      message: message.message ?? '',
+      color: message.color,
+      authorColor: message.authorColor,
+      textColor: message.textColor,
+      timestamp: message.timestamp ?? Date.now(),
+      type: message.type ?? (message.author === 'SYSTEM' ? 'system' : 'chat'),
+      trusted: message.trusted ?? false,
+    }
+  }
+
+  private addMessage(message: ChatMessage, resetTimer = true) {
+    if (!message.message) return
 
     const messageEl = document.createElement('div')
     messageEl.className = 'chat-message'
-    if (msg.type) messageEl.classList.add(msg.type)
-    if (msg.author === 'SYSTEM') messageEl.classList.add('system')
+    if (message.type) messageEl.classList.add(message.type)
+    if (message.author === 'SYSTEM') messageEl.classList.add('system')
 
-    const authorColor = msg.authorColor ?? msg.color
-    const textColor = msg.textColor ?? msg.color
+    const authorColor = message.authorColor ?? message.color
+    const textColor = message.textColor ?? message.color
 
-    if (msg.author) {
+    if (message.author) {
       const authorEl = document.createElement('span')
       authorEl.className = 'author'
-      authorEl.textContent = msg.author
+      authorEl.textContent = message.author
       if (authorColor) authorEl.style.color = rgbToString(authorColor)
       messageEl.appendChild(authorEl)
       messageEl.appendChild(document.createTextNode(': '))
@@ -327,17 +402,17 @@ export class ChatUI {
     messageTextEl.className = 'message-text'
     if (textColor) messageTextEl.style.color = rgbToString(textColor)
 
-    if (CHAT_CONFIG.ENABLE_INLINE_COLOR_CODES && msg.trusted) {
-      renderTextWithInlineColors(messageTextEl, msg.message, textColor)
+    if (CHAT_CONFIG.ENABLE_INLINE_COLOR_CODES && message.trusted) {
+      renderTextWithInlineColors(messageTextEl, message.message, textColor)
     } else {
-      messageTextEl.textContent = msg.message
+      messageTextEl.textContent = message.message
     }
 
     messageEl.appendChild(messageTextEl)
 
     const timestampEl = document.createElement('span')
     timestampEl.className = 'timestamp'
-    timestampEl.textContent = formatTime(msg.timestamp ?? Date.now())
+    timestampEl.textContent = formatTime(message.timestamp ?? Date.now())
     messageEl.appendChild(timestampEl)
 
     this.messagesContainer.appendChild(messageEl)
@@ -354,15 +429,19 @@ export class ChatUI {
       this.updateNewIndicator()
     }
 
-    this.resetHideTimer()
+    if (resetTimer) {
+      this.resetHideTimer()
+    }
   }
 
-  private clearMessages() {
+  private clearMessages(resetTimer = true) {
     this.messagesContainer.innerHTML = ''
     this.messageElements = []
     this.newSinceUnpinned = 0
     this.updateNewIndicator()
-    this.resetHideTimer()
+    if (resetTimer) {
+      this.resetHideTimer()
+    }
   }
 
   private toggleChat(visible: boolean) {
@@ -373,10 +452,8 @@ export class ChatUI {
       this.root.classList.remove('chat-closed')
       this.root.classList.add('chat-open')
       this.inputContainer.classList.remove('hidden')
-
       this.updateSettingsVisibility()
 
-      // Focus but keep existing draft (don't clear input.value)
       requestAnimationFrame(() => {
         this.scrollToBottom(true)
         this.input.focus()
@@ -384,53 +461,43 @@ export class ChatUI {
       this.updatePinnedState()
       this.updateNewIndicator()
       this.updateCharCount()
-    } else {
-      this.root.classList.remove('chat-open')
-      this.root.classList.add('chat-closed')
-      this.inputContainer.classList.add('hidden')
-      this.settingsContainer.classList.add('hidden')
-      this.isSettingsOpen = false
-      this.settingsToggleBtn.classList.remove('active')
-      // Don't clear input.value here either to preserve draft
-      this.history.reset()
+      return
     }
+
+    this.root.classList.remove('chat-open')
+    this.root.classList.add('chat-closed')
+    this.inputContainer.classList.add('hidden')
+    this.settingsContainer.classList.add('hidden')
+    this.isSettingsOpen = false
+    this.settingsToggleBtn.classList.remove('active')
+    this.history.reset()
   }
 
   private sendMessage() {
     const message = this.input.value.trim()
     if (!message) return
 
-    this.history.push(message)
-    this.resetHideTimer()
+    const submitted = this.emitToGame('chat:submit', { message })
+    if (!submitted) return
 
-    fetch(`https://${this.getResourceName()}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data?.ok) {
-          this.input.value = '' // Clear input ONLY on successful send
-          this.updateCharCount()
-          this.history.reset()
-          requestAnimationFrame(() => this.closeChat())
-        }
-      })
-      .catch((err) => console.error('Failed to send message:', err))
+    this.history.push(message)
+    this.input.value = ''
+    this.updateCharCount()
+    this.history.reset()
+    this.resetHideTimer()
+    requestAnimationFrame(() => this.closeChat())
   }
 
   private closeChat() {
-    fetch(`https://${this.getResourceName()}/closeChat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    }).catch((err) => console.error('Failed to close chat:', err))
+    if (!this.emitToGame('chat:close', {})) {
+      this.toggleChat(false)
+    }
   }
 
   private updatePinnedState() {
-    const el = this.messagesContainer
-    const distance = el.scrollHeight - (el.scrollTop + el.clientHeight)
+    const distance =
+      this.messagesContainer.scrollHeight -
+      (this.messagesContainer.scrollTop + this.messagesContainer.clientHeight)
     const pinned = distance <= CHAT_CONFIG.PIN_THRESHOLD_PX
 
     this.isPinnedToBottom = pinned
@@ -445,6 +512,7 @@ export class ChatUI {
       this.newIndicator.classList.add('hidden')
       return
     }
+
     this.newIndicator.classList.remove('hidden')
     this.newIndicator.textContent = `New messages (${this.newSinceUnpinned}) • Click or End`
   }
@@ -458,9 +526,40 @@ export class ChatUI {
     }
   }
 
-  private getResourceName(): string {
-    return (window as any).GetParentResourceName
-      ? (window as any).GetParentResourceName()
-      : 'chat-oc'
+  private notifyRuntimeReady() {
+    const emitted = this.emitToGame('chat:ready', { source: 'xchat-ui' })
+    if (emitted || this.readyAttempts >= 20) return
+
+    this.readyAttempts += 1
+    window.setTimeout(() => this.notifyRuntimeReady(), 150)
+  }
+
+  private emitToGame(eventName: string, payload: unknown): boolean {
+    const bridge = (
+      window as { __OpenCoreWebView?: { emit?: (event: string, payload: unknown) => void } }
+    ).__OpenCoreWebView
+    if (bridge?.emit) {
+      bridge.emit(eventName, payload)
+      return true
+    }
+
+    if (
+      typeof (window as { GetParentResourceName?: () => string }).GetParentResourceName ===
+      'function'
+    ) {
+      const resourceName = (window as unknown as { GetParentResourceName: () => string }).GetParentResourceName()
+      void fetch(`https://${resourceName}/${WEBVIEW_BRIDGE_CALLBACK}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          viewId: DEFAULT_VIEW_ID,
+          event: eventName,
+          payload,
+        }),
+      }).catch((error) => console.error(`Failed to emit ${eventName}:`, error))
+      return true
+    }
+
+    return false
   }
 }

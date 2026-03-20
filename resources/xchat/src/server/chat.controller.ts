@@ -7,6 +7,7 @@ import {
   Player,
   Players,
 } from '@open-core/framework/server'
+import { IEngineEvents } from '@open-core/framework/contracts/server'
 import { notifyChatMessageHooks } from './chat.hooks'
 import { createSourceSnapshot, sendNearbyFaded } from './chat.proximity'
 import type { RGB, SpatialBroadcastInput } from './chat.types'
@@ -22,6 +23,7 @@ export class ChatController {
   constructor(
     private readonly chat: Chat,
     private readonly players: Players,
+    private readonly engineEvents: IEngineEvents,
   ) {}
 
   @Command({
@@ -275,7 +277,7 @@ export class ChatController {
       return
     }
 
-    await notifyChatMessageHooks({
+    notifyChatMessageHooks(this.engineEvents, {
       source,
       message,
       command,

@@ -11,10 +11,17 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
-    "@open-core/cli": "^0.5.0",
-    "typescript": "^5.9.3",
     "@citizenfx/client": "2.0.22443-1",
     "@citizenfx/server": "2.0.22443-1",
-    "@open-core/framework": "file:../opencore-framework"
+    "@open-core/cli": "file:../opencore-cli",
+    "@open-core/framework": "file:../opencore-framework",
+    "@swc/core": "^1.15.18",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@open-core/fivem-adapter": "file:../opencore-fivem-adapter",
+    "@open-core/ragemp-adapter": "file:../opencore-ragemp-adapter",
+    "esbuild": "^0.27.4",
+    "reflect-metadata": "^0.2.2"
   }
 }

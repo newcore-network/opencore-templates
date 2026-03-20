@@ -1,57 +1,116 @@
-import { Client } from '@open-core/framework/client'
-import { registerChatCommands } from './chat.commands'
-import { registerChatCallbacks, sendNUIMessage, setChatFocus } from './chat.nui'
-import { ChatMessage } from './chat.types'
+import { Client, WebView } from '@open-core/framework/client'
+import { EventsAPI, IClientRuntimeBridge } from '@open-core/framework/contracts/client'
+import type { ChatMessage, ChatSettings, ChatViewState } from './chat.types'
+import { resolveChatViewUrl } from './chat.webview'
 
-/**
- * Chat UI Controller
- * Handles chat events from server and manages NUI communication
- */
+const DEFAULT_SETTINGS: ChatSettings = {
+  autoHide: true,
+  hideDuration: 5000,
+}
+
 @Client.Controller()
 export class ChatUIController {
   private chatVisible = false
-  private messages: ChatMessage[] = []
-  private readonly MAX_MESSAGES = 100
+  private chatReady = false
+  private readonly messages: ChatMessage[] = []
+  private readonly maxMessages = 120
+  private settings: ChatSettings = { ...DEFAULT_SETTINGS }
 
-  constructor() {
-    registerChatCallbacks()
-    registerChatCommands()
+  constructor(
+    private readonly events: EventsAPI<'client'>,
+    private readonly runtime: IClientRuntimeBridge,
+  ) {
+    this.ensureWebView()
   }
 
-  /**
-   * Handle broadcast messages
-   * Event: core:chat:message
-   */
+  @Client.Key('T', 'Open chat')
+  openChat(): void {
+    this.ensureWebView()
+    this.chatVisible = true
+    WebView.show(true, true)
+    this.syncViewState()
+  }
+
+  @Client.OnView('chat:ready')
+  onReady(): void {
+    this.chatReady = true
+    this.syncViewState()
+  }
+
+  @Client.OnView('chat:submit')
+  onSubmit(payload: { message?: string }): void {
+    const rawMessage = typeof payload?.message === 'string' ? payload.message : ''
+    const message = rawMessage.trim()
+    if (!message) return
+
+    if (message.startsWith('/')) {
+      const [command = '', ...args] = message.slice(1).trim().split(/\s+/)
+      if (!command) return
+      this.events.emit('core:execute-command', command, args)
+    } else {
+      this.events.emit('core:execute-command', 'say', [message])
+    }
+
+    this.closeChat()
+  }
+
+  @Client.OnView('chat:close')
+  onClose(): void {
+    this.closeChat()
+  }
+
+  @Client.OnView('chat:settings:update')
+  onSettingsUpdate(payload: Partial<ChatSettings>): void {
+    if (typeof payload?.autoHide === 'boolean') {
+      this.settings.autoHide = payload.autoHide
+    }
+    if (typeof payload?.hideDuration === 'number' && Number.isFinite(payload.hideDuration)) {
+      this.settings.hideDuration = payload.hideDuration
+    }
+
+    this.sendToView('chat:settings', this.settings)
+  }
+
   @Client.OnNet('core:chat:message')
   handleBroadcast(data: {
     args: [string, string]
     color: { r: number; g: number; b: number }
     type?: 'chat' | 'system' | 'error' | 'warning'
-  }) {
+  }): void {
     const [author, message] = data.args
-    this.addMessage(author, message, data.color, data.type ?? 'chat')
+    this.addMessage({
+      author,
+      message,
+      color: data.color,
+      authorColor: data.color,
+      textColor: data.color,
+      timestamp: Date.now(),
+      type: data.type ?? 'chat',
+      trusted: true,
+    })
   }
 
-  /**
-   * Handle private messages
-   * Event: core:chat:addMessage
-   */
   @Client.OnNet('core:chat:addMessage')
   handlePrivateMessage(data: {
     args: [string, string]
     color: { r: number; g: number; b: number }
     type?: 'chat' | 'system' | 'error' | 'warning'
-  }) {
+  }): void {
     const [author, message] = data.args
-    this.addMessage(author, message, data.color, data.type ?? 'chat')
+    this.addMessage({
+      author,
+      message,
+      color: data.color,
+      authorColor: data.color,
+      textColor: data.color,
+      timestamp: Date.now(),
+      type: data.type ?? 'chat',
+      trusted: true,
+    })
   }
 
-  /**
-   * Handle simple notifications (from player.send())
-   * Event: core:chat:send
-   */
   @Client.OnNet('core:chat:send')
-  handleChatSend(message: string, type: 'chat' | 'error' | 'success' | 'warning') {
+  handleChatSend(message: string, type: 'chat' | 'error' | 'success' | 'warning'): void {
     const colorMap = {
       chat: { r: 255, g: 255, b: 255 },
       error: { r: 255, g: 100, b: 100 },
@@ -59,62 +118,66 @@ export class ChatUIController {
       warning: { r: 255, g: 200, b: 100 },
     }
 
-    const messageType = type === 'success' ? 'chat' : type
-    this.addMessage('SYSTEM', message, colorMap[type], messageType)
-  }
-
-  /**
-   * Handle clear chat event
-   * Event: core:chat:clear
-   */
-  @Client.OnNet('core:chat:clear')
-  handleClearChat() {
-    this.messages = []
-    sendNUIMessage('clearChat', null)
-  }
-
-  /**
-   * Update chat settings
-   * Event: core:chat:updateSettings
-   */
-  @Client.OnNet('core:chat:updateSettings')
-  handleUpdateSettings(settings: { autoHide?: boolean; hideDuration?: number }) {
-    sendNUIMessage('updateSettings', settings)
-  }
-
-  /**
-   * Add a message to the chat
-   */
-  private addMessage(
-    author: string,
-    message: string,
-    color: { r: number; g: number; b: number },
-    type?: 'chat' | 'system' | 'error' | 'warning',
-  ) {
-    const chatMessage: ChatMessage = {
-      author,
+    this.addMessage({
+      author: 'SYSTEM',
       message,
-      color,
+      color: colorMap[type],
+      authorColor: colorMap[type],
+      textColor: colorMap[type],
       timestamp: Date.now(),
-      type,
+      type: type === 'success' ? 'chat' : type,
       trusted: true,
-    }
+    })
+  }
 
-    this.messages.push(chatMessage)
+  @Client.OnNet('core:chat:clear')
+  handleClearChat(): void {
+    this.messages.length = 0
+    this.sendToView('chat:clear', null)
+  }
 
-    if (this.messages.length > this.MAX_MESSAGES) {
+  @Client.OnNet('core:chat:updateSettings')
+  handleUpdateSettings(settings: Partial<ChatSettings>): void {
+    this.onSettingsUpdate(settings)
+  }
+
+  private ensureWebView(): void {
+    if (WebView.exists()) return
+
+    WebView.create(resolveChatViewUrl(this.runtime), {
+      visible: false,
+      focused: false,
+      cursor: true,
+    })
+  }
+
+  private closeChat(): void {
+    this.chatVisible = false
+    this.sendToView('chat:visibility', { visible: false })
+    WebView.hide()
+  }
+
+  private addMessage(message: ChatMessage): void {
+    this.messages.push(message)
+    if (this.messages.length > this.maxMessages) {
       this.messages.shift()
     }
 
-    sendNUIMessage('addMessage', chatMessage)
+    this.sendToView('chat:add-message', message)
   }
 
-  /**
-   * Toggle chat visibility
-   */
-  public toggleChat() {
-    this.chatVisible = !this.chatVisible
-    sendNUIMessage('toggleChat', { visible: this.chatVisible })
-    setChatFocus(this.chatVisible)
+  private syncViewState(): void {
+    const state: ChatViewState = {
+      visible: this.chatVisible,
+      settings: this.settings,
+      messages: [...this.messages],
+    }
+
+    this.sendToView('chat:state', state)
+  }
+
+  private sendToView(action: string, data: unknown): void {
+    if (!this.chatReady) return
+    WebView.sendRaw(action, data)
   }
 }

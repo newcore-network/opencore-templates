@@ -1,18 +1,28 @@
 import { defineConfig } from '@open-core/cli'
+import { FiveMClientAdapter } from '@open-core/fivem-adapter/client'
+import { FiveMServerAdapter } from '@open-core/fivem-adapter/server'
 
 export default defineConfig({
   name: 'opencore-templates',
-  destination: 'your test enviroment...', // <- CHANGE
 
-  // OR edit for your core tester
-  core: {
-    path: './core',
-    resourceName: 'core',
+  destination: '../build',
+
+  adapter: {
+    client: FiveMClientAdapter(),
+    server: FiveMServerAdapter()
   },
 
-  // Auto resource discovery
+  core: {
+    path: './core',
+    resourceName: 'core'
+  },
+
   resources: {
     include: ['./resources/*'],
+  },
+
+  standalones: {
+    include: ['./standalones/*'],
   },
 
   build: {
@@ -25,5 +35,5 @@ export default defineConfig({
 
   dev: {
     port: 3847,
-  },
+  }
 })

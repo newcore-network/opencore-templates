@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencorejs.dev/schemas/oc-manifest.schema.json",
+  "schemaVersion": 1,
+  "name": "xchat",
+  "displayName": "xChat",
+  "kind": "resource",
+  "description": "Multi-platform chat resource powered by OpenCore WebView and transport abstractions.",
+  "compatibility": {
+    "runtimes": ["fivem", "ragemp", "redm"],
+    "gameProfiles": ["common"]
+  },
+  "requires": {
+    "templates": ["core"]
+  },
+  "links": {
+    "readme": "./README.md",
+    "repository": "https://github.com/newcore-network/opencore-templates"
+  }
+}
