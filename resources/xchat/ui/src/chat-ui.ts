@@ -487,19 +487,18 @@ export class ChatUI {
 
   private sendMessage() {
     const message = this.input.value.trim()
+    if (!message) return
 
-    if (message) {
-      const submitted = this.emitToGame('chat:submit', { message })
-      if (!submitted) return
-
-      this.history.push(message)
-      this.input.value = ''
-      this.updateCharCount()
-      this.history.reset()
-    }
-
-    this.resetHideTimer()
     this.closeChat()
+
+    const submitted = this.emitToGame('chat:submit', { message })
+    if (!submitted) return
+
+    this.history.push(message)
+    this.input.value = ''
+    this.updateCharCount()
+    this.history.reset()
+    this.resetHideTimer()
   }
 
   private closeChat() {

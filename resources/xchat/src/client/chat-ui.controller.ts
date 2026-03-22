@@ -179,7 +179,6 @@ export class ChatUIController {
       this.messages.shift()
     }
 
-    WebView.setVisible(true)
     this.sendToView('chat:add-message', message)
   }
 
