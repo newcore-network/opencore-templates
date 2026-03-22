@@ -50,6 +50,8 @@ export class ChatUIController {
     const message = rawMessage.trim()
     if (!message) return
 
+    this.closeChat()
+
     if (message.startsWith('/')) {
       const [command = '', ...args] = message.slice(1).trim().split(/\s+/)
       const normalizedArgs = args
@@ -61,8 +63,6 @@ export class ChatUIController {
     } else {
       this.events.emit('core:execute-command', 'say', [message])
     }
-
-    this.closeChat()
   }
 
   @Client.OnView('chat:close')
@@ -168,6 +168,7 @@ export class ChatUIController {
   private closeChat(): void {
     this.chatVisible = false
     this.sendToView('chat:visibility', { visible: false })
+    this.sendToView('chat:blur-input', null)
     WebView.blur()
   }
 

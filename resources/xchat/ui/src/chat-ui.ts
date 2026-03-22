@@ -28,6 +28,7 @@ export class ChatUI {
   private history = new CommandHistory()
   private hideTimeout: number | null = null
   private readyAttempts = 0
+  private readonly hasRuntimeBridge: boolean
 
   constructor() {
     const root = document.getElementById('chat-container')
@@ -77,12 +78,12 @@ export class ChatUI {
       scrollToBottom: () => this.scrollToBottom(true),
     }
 
-    const hasRuntimeBridge =
+    this.hasRuntimeBridge =
       typeof (window as any).__OpenCoreWebView?.emit === 'function' ||
       typeof (window as any).mp?.trigger === 'function' ||
       typeof (window as any).GetParentResourceName === 'function'
 
-    if (!hasRuntimeBridge) {
+    if (!this.hasRuntimeBridge) {
       new DevTools(addMsg, toggle, clear)
     }
 
@@ -264,15 +265,17 @@ export class ChatUI {
       }
     })
 
-    window.addEventListener('keydown', (event) => {
-      if ((event.target as { id?: string } | null)?.id === 'chat-input') return
-      const key = event.key.toLowerCase()
-      if (key === 't' && !this.isVisible) {
-        event.preventDefault()
-        this.toggleChat(true)
-      }
-      if (event.key === 'End') this.scrollToBottom(true)
-    })
+    if (!this.hasRuntimeBridge) {
+      window.addEventListener('keydown', (event) => {
+        if ((event.target as { id?: string } | null)?.id === 'chat-input') return
+        const key = event.key.toLowerCase()
+        if (key === 't' && !this.isVisible) {
+          event.preventDefault()
+          this.toggleChat(true)
+        }
+        if (event.key === 'End') this.scrollToBottom(true)
+      })
+    }
   }
 
   private setupMessageListener() {
@@ -337,6 +340,9 @@ export class ChatUI {
         break
       case 'chat:focus-input':
         requestAnimationFrame(() => this.input.focus())
+        break
+      case 'chat:blur-input':
+        this.input.blur()
         break
     }
   }
@@ -475,6 +481,7 @@ export class ChatUI {
     this.root.classList.remove('chat-open')
     this.root.classList.add('chat-closed')
     this.inputContainer.classList.add('hidden')
+    this.input.blur()
     this.settingsContainer.classList.add('hidden')
     this.isSettingsOpen = false
     this.settingsToggleBtn.classList.remove('active')
@@ -493,7 +500,7 @@ export class ChatUI {
     this.updateCharCount()
     this.history.reset()
     this.resetHideTimer()
-    requestAnimationFrame(() => this.closeChat())
+    this.closeChat()
   }
 
   private closeChat() {
