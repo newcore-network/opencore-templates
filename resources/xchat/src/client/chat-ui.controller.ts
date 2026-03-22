@@ -35,7 +35,7 @@ export class ChatUIController {
 
     this.chatVisible = true
     WebView.show(true, true)
-    this.syncViewState()
+    this.sendToView('chat:visibility', { visible: true })
   }
 
   @Client.OnView('chat:ready')

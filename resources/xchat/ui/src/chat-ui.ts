@@ -70,13 +70,13 @@ export class ChatUI {
     const toggle = (visible: boolean) => this.toggleChat(visible)
     const clear = () => this.clearMessages()
 
-    ;(window as any).ocChatDev = {
-      addMessage: addMsg,
-      clearChat: clear,
-      toggleChat: toggle,
-      emit: (type: string, data: any) => window.postMessage({ type, data }, '*'),
-      scrollToBottom: () => this.scrollToBottom(true),
-    }
+      ; (window as any).ocChatDev = {
+        addMessage: addMsg,
+        clearChat: clear,
+        toggleChat: toggle,
+        emit: (type: string, data: any) => window.postMessage({ type, data }, '*'),
+        scrollToBottom: () => this.scrollToBottom(true),
+      }
 
     this.hasRuntimeBridge =
       typeof (window as any).__OpenCoreWebView?.emit === 'function' ||
@@ -463,9 +463,8 @@ export class ChatUI {
     this.resetHideTimer()
 
     if (visible) {
-      this.root.classList.remove('chat-closed')
       this.root.classList.add('chat-open')
-      this.inputContainer.classList.remove('hidden')
+      this.inputContainer.hidden = false
       this.updateSettingsVisibility()
 
       requestAnimationFrame(() => {
@@ -479,9 +478,7 @@ export class ChatUI {
     }
 
     this.root.classList.remove('chat-open')
-    this.root.classList.add('chat-closed')
-    this.inputContainer.classList.add('hidden')
-    this.input.blur()
+    this.inputContainer.hidden = true
     this.settingsContainer.classList.add('hidden')
     this.isSettingsOpen = false
     this.settingsToggleBtn.classList.remove('active')
@@ -490,15 +487,17 @@ export class ChatUI {
 
   private sendMessage() {
     const message = this.input.value.trim()
-    if (!message) return
 
-    const submitted = this.emitToGame('chat:submit', { message })
-    if (!submitted) return
+    if (message) {
+      const submitted = this.emitToGame('chat:submit', { message })
+      if (!submitted) return
 
-    this.history.push(message)
-    this.input.value = ''
-    this.updateCharCount()
-    this.history.reset()
+      this.history.push(message)
+      this.input.value = ''
+      this.updateCharCount()
+      this.history.reset()
+    }
+
     this.resetHideTimer()
     this.closeChat()
   }
