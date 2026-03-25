@@ -34,6 +34,11 @@ export default defineConfig({
   },
 
   dev: {
-    port: 3847,
+    bridge: {
+      port: 3847,
+    },
+    restart: {
+      mode: 'auto',
+    },
   }
 })

@@ -10,15 +10,15 @@
     "check": "biome check --write ."
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.11",
-    "@citizenfx/client": "2.0.22443-1",
-    "@citizenfx/server": "2.0.22443-1",
-    "@ragempcommunity/types-server": "^2.1.9",
-    "@ragempcommunity/types-client": "^2.1.9",
+    "@biomejs/biome": "2.4.8",
+    "@citizenfx/client": "2.0.27366-1",
+    "@citizenfx/server": "2.0.27366-1",
     "@open-core/cli": "file:../opencore-cli",
     "@open-core/framework": "file:../opencore-framework",
-    "@swc/core": "^1.15.18",
-    "typescript": "^5.9.3"
+    "@ragempcommunity/types-client": "^2.1.9",
+    "@ragempcommunity/types-server": "^2.1.9",
+    "@swc/core": "^1.15.21",
+    "typescript": "^6.0.2"
   },
   "dependencies": {
     "@open-core/fivem-adapter": "file:../opencore-fivem-adapter",
