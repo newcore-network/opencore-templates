@@ -8,10 +8,30 @@ export interface ChatMessage {
   textColor?: RGB
   timestamp?: number
   type?: 'chat' | 'system' | 'error' | 'warning'
-  trusted?: boolean // If true, allow color codes and formatting from server
+  trusted?: boolean
 }
 
-export interface NUIMessage {
+export interface ChatSettings {
+  autoHide?: boolean
+  hideDuration?: number
+}
+
+export interface ChatState {
+  visible: boolean
+  settings: ChatSettings
+  messages: ChatMessage[]
+}
+
+export interface LegacyUIMessage {
   type: string
   data: any
+}
+
+export interface WebViewMessage {
+  __opencoreWebView: true
+  type?: 'create' | 'destroy' | 'show' | 'hide'
+  viewId?: string
+  payload?: unknown
+  action?: string
+  data?: any
 }

@@ -5,27 +5,25 @@
   "description": "OpenCore server project",
   "scripts": {
     "dev": "opencore dev",
-    "chat:dev": "pnpm --filter xchat-ui dev",
-    "build": "tsc --noEmit && opencore build",
-    "check": "biome check .",
-    "check:fix": "biome check --write .",
-    "check:fix:unsafe": "biome check --write --unsafe",
-    "format": "biome format --write .",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint --write ."
+    "ui:dev": "pnpm -r --parallel --filter \"*-ui\" dev",
+    "build": "opencore build",
+    "check": "biome check --write ."
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.11",
-    "@open-core/cli": "^0.5.0",
-    "@swc/core": "^1.15.8",
-    "esbuild": "^0.27.2",
-    "esbuild-plugin-swc": "^1.0.1",
-    "typescript": "^5.9.3"
+    "@biomejs/biome": "2.4.8",
+    "@citizenfx/client": "2.0.27366-1",
+    "@citizenfx/server": "2.0.27366-1",
+    "@open-core/cli": "file:../opencore-cli",
+    "@open-core/framework": "file:../opencore-framework",
+    "@ragempcommunity/types-client": "^2.1.9",
+    "@ragempcommunity/types-server": "^2.1.9",
+    "@swc/core": "^1.15.21",
+    "typescript": "^6.0.2"
   },
   "dependencies": {
-    "@citizenfx/client": "2.0.22443-1",
-    "@citizenfx/server": "2.0.22443-1",
-    "@open-core/framework": "^0.3.2",
+    "@open-core/fivem-adapter": "file:../opencore-fivem-adapter",
+    "@open-core/ragemp-adapter": "file:../opencore-ragemp-adapter",
+    "esbuild": "^0.27.4",
     "reflect-metadata": "^0.2.2"
   }
 }

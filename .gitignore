@@ -6,3 +6,10 @@ views/
 CLAUDE.md
 .claude/
 .vscode/
+.opencore/
+
+# env-tests
+fivem/
+ragemp/
+redm/
+bin/

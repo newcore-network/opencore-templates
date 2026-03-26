@@ -1,8 +1,7 @@
 packages:
-  - core
   - resources/*
   - resources/*/ui
-  - standalone/*
+  - standalones/*
 
 ignoredBuiltDependencies:
   - '@open-core/cli'
