@@ -2,6 +2,7 @@ import { Client, WebView } from '@open-core/framework/client'
 import { EventsAPI, IClientRuntimeBridge } from '@open-core/framework/contracts/client'
 import type { ChatMessage, ChatSettings, ChatViewState } from './chat.types'
 import { resolveChatViewUrl } from './chat.webview'
+import { SYSTEM_EVENTS } from '@open-core/framework'
 
 const DEFAULT_SETTINGS: ChatSettings = {
   autoHide: true,
@@ -59,9 +60,9 @@ export class ChatUIController {
         .filter((arg) => arg.length > 0)
 
       if (!command) return
-      this.events.emit('core:execute-command', command.trim(), normalizedArgs)
+      this.events.emit(SYSTEM_EVENTS.command.execute, command.trim(), normalizedArgs)
     } else {
-      this.events.emit('core:execute-command', 'say', [message])
+      this.events.emit(SYSTEM_EVENTS.command.execute, 'say', [message])
     }
   }
 
@@ -82,7 +83,7 @@ export class ChatUIController {
     this.sendToView('chat:settings', this.settings)
   }
 
-  @Client.OnNet('core:chat:message')
+  @Client.OnNet(SYSTEM_EVENTS.chat.message)
   handleBroadcast(data: {
     args: [string, string]
     color: { r: number; g: number; b: number }
@@ -101,7 +102,7 @@ export class ChatUIController {
     })
   }
 
-  @Client.OnNet('core:chat:addMessage')
+  @Client.OnNet(SYSTEM_EVENTS.chat.addMessage)
   handlePrivateMessage(data: {
     args: [string, string]
     color: { r: number; g: number; b: number }
@@ -120,7 +121,7 @@ export class ChatUIController {
     })
   }
 
-  @Client.OnNet('core:chat:send')
+  @Client.OnNet(SYSTEM_EVENTS.chat.send)
   handleChatSend(message: string, type: 'chat' | 'error' | 'success' | 'warning'): void {
     const colorMap = {
       chat: { r: 255, g: 255, b: 255 },
@@ -141,7 +142,7 @@ export class ChatUIController {
     })
   }
 
-  @Client.OnNet('core:chat:clear')
+  @Client.OnNet(SYSTEM_EVENTS.chat.clear)
   handleClearChat(): void {
     this.messages.length = 0
     this.sendToView('chat:clear', null)
