@@ -13,16 +13,16 @@
     "@biomejs/biome": "2.4.8",
     "@citizenfx/client": "2.0.27366-1",
     "@citizenfx/server": "2.0.27366-1",
-    "@open-core/cli": "file:../opencore-cli",
-    "@open-core/framework": "file:../opencore-framework",
+    "@open-core/cli": "latest",
+    "@open-core/framework": "latest",
     "@ragempcommunity/types-client": "^2.1.9",
     "@ragempcommunity/types-server": "^2.1.9",
     "@swc/core": "^1.15.21",
     "typescript": "^6.0.2"
   },
   "dependencies": {
-    "@open-core/fivem-adapter": "file:../opencore-fivem-adapter",
-    "@open-core/ragemp-adapter": "file:../opencore-ragemp-adapter",
+    "@open-core/fivem-adapter": "latest",
+    "@open-core/ragemp-adapter": "latest",
     "esbuild": "^0.27.4",
     "reflect-metadata": "^0.2.2"
   }
