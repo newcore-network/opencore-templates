@@ -9,12 +9,12 @@ export default defineConfig({
 
   adapter: {
     client: FiveMClientAdapter(),
-    server: FiveMServerAdapter()
+    server: FiveMServerAdapter(),
   },
 
   core: {
     path: './core',
-    resourceName: 'core'
+    resourceName: 'core',
   },
 
   resources: {
@@ -40,5 +40,5 @@ export default defineConfig({
     restart: {
       mode: 'auto',
     },
-  }
+  },
 })

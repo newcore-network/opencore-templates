@@ -13,8 +13,12 @@
     "useDefineForClassFields": false,
     "outDir": "./build",
     "noEmit": true,
-    "types": ["@citizenfx/client", "@citizenfx/server",
-     "@ragempcommunity/types-server", "@ragempcommunity/types-client"]
+    "types": [
+      "@citizenfx/client",
+      "@citizenfx/server",
+      "@ragempcommunity/types-server",
+      "@ragempcommunity/types-client"
+    ]
   },
   "exclude": ["views", "build", "node_modules"]
 }

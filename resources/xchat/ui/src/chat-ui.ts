@@ -70,13 +70,13 @@ export class ChatUI {
     const toggle = (visible: boolean) => this.toggleChat(visible)
     const clear = () => this.clearMessages()
 
-      ; (window as any).ocChatDev = {
-        addMessage: addMsg,
-        clearChat: clear,
-        toggleChat: toggle,
-        emit: (type: string, data: any) => window.postMessage({ type, data }, '*'),
-        scrollToBottom: () => this.scrollToBottom(true),
-      }
+    ;(window as any).ocChatDev = {
+      addMessage: addMsg,
+      clearChat: clear,
+      toggleChat: toggle,
+      emit: (type: string, data: any) => window.postMessage({ type, data }, '*'),
+      scrollToBottom: () => this.scrollToBottom(true),
+    }
 
     this.hasRuntimeBridge =
       typeof (window as any).__OpenCoreWebView?.emit === 'function' ||
@@ -557,10 +557,17 @@ export class ChatUI {
     }
 
     const rageMp = window as unknown as {
-      mp?: { trigger?: (eventName: string, viewId: string, event: string, payloadJson: string) => void }
+      mp?: {
+        trigger?: (eventName: string, viewId: string, event: string, payloadJson: string) => void
+      }
     }
     if (typeof rageMp.mp?.trigger === 'function') {
-      rageMp.mp.trigger(WEBVIEW_BRIDGE_CALLBACK, DEFAULT_VIEW_ID, eventName, JSON.stringify(payload ?? null))
+      rageMp.mp.trigger(
+        WEBVIEW_BRIDGE_CALLBACK,
+        DEFAULT_VIEW_ID,
+        eventName,
+        JSON.stringify(payload ?? null),
+      )
       return true
     }
 
@@ -568,7 +575,9 @@ export class ChatUI {
       typeof (window as { GetParentResourceName?: () => string }).GetParentResourceName ===
       'function'
     ) {
-      const resourceName = (window as unknown as { GetParentResourceName: () => string }).GetParentResourceName()
+      const resourceName = (
+        window as unknown as { GetParentResourceName: () => string }
+      ).GetParentResourceName()
       void fetch(`https://${resourceName}/${WEBVIEW_BRIDGE_CALLBACK}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
